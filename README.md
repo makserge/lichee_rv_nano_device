@@ -57,13 +57,7 @@ to
 bind_to_address                        "0.0.0.0"
 
 
-add after
-
-#audio_output {
-#       type            "null"
-#       name            "My Null Output"
-#       mixer_type      "none"                  # optional
-#}
+add to the end
 
 audio_output {
         type            "alsa"
