@@ -22,9 +22,17 @@ apt upgrade
 
 7. Install packages
 
-apt install mpd mpc samba samba-common-bin htop alsa-utils nano
+apt install mpd mpc samba samba-common-bin htop alsa-utils nano wget
 
-8. Configure mpd
+8. Fix MAC address
+
+nano /etc/network/interfaces.d/end0
+
+allow-hotplug end0
+iface end0 inet dhcp
+    hwaddress ether XX:XX:XX:XX:XX:XX
+
+9. Configure mpd
 
 systemctl enable mpd
 systemctl start mpd
@@ -69,16 +77,16 @@ audio_output {
         mixer_index     "0"
 }
 
-9. Restart mpd
+10. Restart mpd
 
 systemctl restart mpd
 
-10. Check mpd
+11. Check mpd
 
 mpc add http://fhhalle.streamabc.net/fhhal-brocken90er-mp3-256-1012329
 mpc play
 
-11. Configure Samba
+12. Configure Samba
 
 useradd samba
 mkdir /srv/share
@@ -103,11 +111,11 @@ guest ok = yes
 writeable = yes
 force user = samba
 
-12. Restart samba
+13. Restart samba
 
 systemctl reload smb
 
-13. Create folders for mpd
+14. Create folders for mpd
 
 mkdir /srv/share/mpd
 mkdir /srv/share/mpd/music
@@ -115,7 +123,10 @@ mkdir /srv/share/mpd/playlists
 
 chmod -R 777 /srv/share/mpd
 
-14. Update mpd database
+15. Update mpd database
     
 mpc update
-    
+
+16. Install lighttpd
+
+apt install lighttpd
