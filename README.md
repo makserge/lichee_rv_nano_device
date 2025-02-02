@@ -127,6 +127,56 @@ chmod -R 777 /srv/share/mpd
     
 mpc update
 
-16. Install lighttpd
+16. Install PM2
 
-apt install lighttpd
+apt install nodejs npm
+npm i -g pm2
+
+pm2 -v
+5.4.3
+
+17. Install MPD web UI
+    
+git clone https://github.com/ondras/cyp.git && cd cyp
+npm i
+
+nano index.js
+
+replace
+
+let httpServer = require("http").createServer(onRequest).listen(port);
+
+to
+
+let httpServer = require("http").createServer(onRequest).listen(port, '0.0.0.0');
+
+pm2 start index.js
+
+[PM2] Starting /home/debian/cyp/index.js in fork_mode (1 instance)
+[PM2] Done.
+┌────┬──────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name     │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼──────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ index    │ default     │ 1.0.0   │ fork    │ 3097     │ 1s     │ 0    │ online    │ 0%       │ 38.8mb   │ debian   │ disabled │
+└────┴──────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+
+pm2 save
+
+[PM2] Saving current process list...
+[PM2] Successfully saved in /home/debian/.pm2/dump.pm2
+
+pm2 startup
+[PM2] Init System found: systemd
+[PM2] To setup the Startup Script, copy/paste the following command:
+sudo env PATH=$PATH:/usr/bin /usr/local/lib/node_modules/pm2/bin/pm2 startup systemd -u debian --hp /home/debian
+
+
+sudo env PATH=$PATH:/usr/bin /usr/local/lib/node_modules/pm2/bin/pm2 startup systemd -u debian --hp /home/debian
+
+pm2 list
+
+┌────┬──────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name     │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼──────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ index    │ default     │ 1.0.0   │ fork    │ 3097     │ 3m     │ 0    │ online    │ 0%       │ 45.1mb   │ debian   │ disabled │
+└────┴──────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
