@@ -102,6 +102,22 @@ comment blocks
 [print$]
 
 
+add in block 
+
+[global]
+
+after
+
+usershare allow guests = yes
+
+content
+
+follow symlinks = yes
+wide links = yes
+unix extensions = no
+
+
+
 add to the end
 
 [share]
@@ -180,3 +196,17 @@ pm2 list
 ├────┼──────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
 │ 0  │ index    │ default     │ 1.0.0   │ fork    │ 3097     │ 3m     │ 0    │ online    │ 0%       │ 45.1mb   │ debian   │ disabled │
 └────┴──────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+
+18. USB automount TF card
+
+mkdir /media/usb
+
+sudo nano /etc/fstab
+
+add
+
+/dev/sda1       /media/usb      auto    nosuid,nodev,nofail       0       0
+
+19. Add symlink to TF card to Samba share
+   
+ln -s /media/usb /srv/share/mpd/music
