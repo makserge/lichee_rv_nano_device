@@ -1,6 +1,6 @@
 # LicheeRV nano (WiFi and Ethernet) based web radio / led matrix informer / CO2 monitor how to
 
-1. Download Debian for SG2002
+1. Download Debian for SG2002 (licheervnano_sd.img.lz4)
 
    https://github.com/Fishwaldo/sophgo-sg200x-debian
 
