@@ -215,20 +215,23 @@ ln -s /media/usb /srv/share/mpd/music
 
 sudo apt install libasound2-plugin-equal caps
 sudo nano /etc/asound.conf
-pcm.mpdequal {
-    type plug
-    slave.pcm "equalizer"
-}
-pcm.equalizer {
+pcm.my_equalizer {
     type equal
-    slave.pcm "hardware_sink"
+    slave.pcm "plughw:2,0" 
 }
-pcm.hardware_sink {
-    type plug
-    slave.pcm "hw:2,0"
-}
-ctl.mpdequal {
+
+ctl.equal {
     type equal
+}
+
+pcm.equalplug {
+    type plug
+    slave.pcm "my_equalizer"
+}
+
+pcm.!default {
+    type plug
+    slave.pcm "equalplug"
 }
 
 sudo nano /etc/mpd.conf
@@ -236,14 +239,16 @@ sudo nano /etc/mpd.conf
 update 
 
 audio_output {
-        type            "alsa"
-        name            "USB Audio Adapter (EQ)"
-        device          "mpdequal"        # Change this to use the EQ device
-        mixer_device    "hw:2"
-        mixer_type      "software"
-        mixer_control   "PCM"
-        mixer_index     "0"
+    type            "alsa"
+    name            "PCM2704 USB Equalizer"
+    device          "equalplug"     # Target the converter plug wrapper
+    mixer_type      "software"
 }
+
+rm -f ~/.alsaequal.bin
+sudo touch /var/lib/mpd/.alsaequal.bin
+sudo chown mpd:audio /var/lib/mpd/.alsaequal.bin
+sudo chmod 664 /var/lib/mpd/.alsaequal.bin
 
 sudo systemctl restart mpd
 
