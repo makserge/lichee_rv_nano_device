@@ -210,3 +210,42 @@ add
 19. Add symlink to TF card to Samba share
    
 ln -s /media/usb /srv/share/mpd/music
+
+20. Equaliser
+
+sudo apt install libasound2-plugin-equal caps
+sudo nano /etc/asound.conf
+pcm.mpdequal {
+    type plug
+    slave.pcm "equalizer"
+}
+pcm.equalizer {
+    type equal
+    slave.pcm "hardware_sink"
+}
+pcm.hardware_sink {
+    type plug
+    slave.pcm "hw:2,0"
+}
+ctl.mpdequal {
+    type equal
+}
+
+sudo nano /etc/mpd.conf
+
+update 
+
+audio_output {
+        type            "alsa"
+        name            "USB Audio Adapter (EQ)"
+        device          "mpdequal"        # Change this to use the EQ device
+        mixer_device    "hw:2"
+        mixer_type      "software"
+        mixer_control   "PCM"
+        mixer_index     "0"
+}
+
+sudo systemctl restart mpd
+
+alsamixer -D mpdequal
+
