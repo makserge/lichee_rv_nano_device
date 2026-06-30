@@ -1,4 +1,4 @@
-# LicheeRV nano (WiFi and Ethernet) based web radio / led matrix informer / CO2 monitor how to
+# LicheeRV nano Ethernet based web radio
 
 1. Download Debian for SG2002 (licheervnano_sd.img.lz4)
 
@@ -252,5 +252,5 @@ sudo chmod 664 /var/lib/mpd/.alsaequal.bin
 
 sudo systemctl restart mpd
 
-alsamixer -D mpdequal
+alsamixer -D equal
 
