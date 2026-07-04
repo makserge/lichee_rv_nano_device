@@ -119,7 +119,6 @@ Append your network drive definition to the bottom of the config:
 ```text
 [share]
 path = /srv/share
-guest ok = yes
 writeable = yes
 force user = samba
 ```
