@@ -144,21 +144,13 @@ apt install nodejs npm -y
 npm i -g pm2
 ```
 
-Clone the [[[Ondras CYP Frontend Repository](https://github.com)](https://github.com/makserge/cyp)](https://github.com/makserge/cyp) and compile the application bindings:
+Clone the https://github.com/makserge/cyp and compile the application bindings:
 
 ```bash
 git clone https://github.com/makserge/cyp && cd cyp
 npm i
 nano index.js
 ```
-
-Change the network binding inside `index.js` to allow external devices to open the dashboard web page:
-
-* Find and change `let httpServer = require("http").createServer(onRequest).listen(port);` to:
-  ```javascript
-  let httpServer = require("http").createServer(onRequest).listen(port, '0.0.0.0');
-  ```
-
 Launch the daemon and bind the instance to system startup hooks:
 
 ```bash
