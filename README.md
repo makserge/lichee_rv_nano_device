@@ -106,12 +106,13 @@ nano /etc/samba/smb.conf
 
 Adjust the file share behavior by commenting out configurations and appending global overrides:
 
-* Comment out the blocks starting with `[printers]` and `[print$]` by adding a `#` character to the front of those lines.
+* Comment out the blocks starting with `[homes]`, `[printers]` and `[print$]` by adding a `#` character to the front of those lines.
 * In the `[global]` block, immediately underneath the line `usershare allow guests = yes`, add:
   ```text
-  follow symlinks = yes
-  wide links = yes
-  unix extensions = no
+  path = /srv/share
+writeable = yes
+guest ok = yes
+force user = samba
   ```
 
 Append your network drive definition to the bottom of the config:
