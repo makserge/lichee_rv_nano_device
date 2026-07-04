@@ -194,8 +194,6 @@ to allow full read, write, and execute permissions:
 
 ```bash
 mount -a
-chown -R samba:samba /media/usb /media/sdcard
-chmod -R 777 /media/usb /media/sdcard
 ```
 
 Link your external physical drive and secondary card directories directly into
