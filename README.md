@@ -1,72 +1,77 @@
-# LicheeRV nano Ethernet based web radio
+# LicheeRV Nano Ethernet-Based Web Radio Setup Guide
 
-1. Download Debian for SG2002 (licheervnano_sd.img.lz4)
+This guide details how to configure a Debian-based internet radio with a Samba media share and a lightweight web control interface on the LicheeRV Nano (SG2002).
 
-   https://github.com/Fishwaldo/sophgo-sg200x-debian
+## 1. Preparation & OS Flashing
 
-2. Flash it to micro SD card using BalenaEtcher
+1. Download the Debian system image (`licheervnano_sd.img.lz4`) from the [Fishwaldo sophgo-sg200x-debian Repository](https://github.com).
+2. Flash the downloaded image to a Micro SD card using [BalenaEtcher](https://balena.io).
+3. Insert the card into your LicheeRV Nano, boot up, and connect via SSH:
+   * **Username:** `debian`
+   * **Password:** `rv`
 
-3. Boot board from SD card and connect to it via SSH as debian/rv
-4. Change user to root/rv
+---
 
+## 2. Base System Configuration
+
+Elevate your user shell to root and disable the default USB network sharing to clean up your network interfaces:
+
+```bash
 sudo su -
-
-5. Switch off RNDIS on Type-C USB
-
 systemctl disable usb-gadget-rndis
+apt update && apt upgrade -y
+```
 
-6. Update system
+Install the essential multimedia, network file system, and package tools:
 
-apt update
-apt upgrade
+```bash
+apt install mpd mpc samba samba-common-bin htop alsa-utils nano wget -y
+```
 
-7. Install packages
+Fix your Ethernet MAC address to ensure persistent IP assignment across system reboots:
 
-apt install mpd mpc samba samba-common-bin htop alsa-utils nano wget
-
-8. Fix MAC address
-
+```bash
 nano /etc/network/interfaces.d/end0
+```
 
+Add the following block to the network definition file:
+
+```text
 allow-hotplug end0
 iface end0 inet dhcp
     hwaddress ether XX:XX:XX:XX:XX:XX
+```
 
-9. Configure mpd
+---
 
+## 3. MPD Audio Setup
+
+Enable the Music Player Daemon background service:
+
+```bash
 systemctl enable mpd
 systemctl start mpd
-
 nano /etc/mpd.conf
+```
 
-replace 
+Within the file, locate and update the following variables to route audio to your custom directories and accept remote connections:
 
-music_directory         "/var/lib/mpd/music"
+* Find and change `music_directory "/var/lib/mpd/music"` to:
+  ```text
+  music_directory         "/srv/share/mpd/music"
+  ```
+* Find and change `playlist_directory "/var/lib/mpd/playlists"` to:
+  ```text
+  playlist_directory              "/srv/share/mpd/playlists"
+  ```
+* Find and change `bind_to_address "localhost"` to:
+  ```text
+  bind_to_address                        "0.0.0.0"
+  ```
 
-to
+Append your hardware ALSA audio profile to the very bottom of the document:
 
-music_directory         "/srv/share/mpd/music"
-
-replace
-
-playlist_directory              "/var/lib/mpd/playlists"
-
-to
-
-playlist_directory              "/srv/share/mpd/playlists"
-
-
-replace
-
-bind_to_address                        "localhost"
-
-to
-
-bind_to_address                        "0.0.0.0"
-
-
-add to the end
-
+```text
 audio_output {
         type            "alsa"
         name            "USB Audio Adapter"
@@ -76,145 +81,127 @@ audio_output {
         mixer_control   "PCM"
         mixer_index     "0"
 }
+```
 
-10. Restart mpd
+Apply settings and verify audio streaming functionality:
 
+```bash
 systemctl restart mpd
-
-11. Check mpd
-
-mpc add http://fhhalle.streamabc.net/fhhal-brocken90er-mp3-256-1012329
+mpc add http://streamabc.net
 mpc play
+```
 
-12. Configure Samba
+---
 
+## 4. Samba Share Integration
+
+Create a system user for file transfers and allocate system directories:
+
+```bash
 useradd samba
 mkdir /srv/share
 chown samba:samba /srv/share
-
-Edit /etc/samba/smb.conf
-
 nano /etc/samba/smb.conf
+```
 
-comment blocks
+Adjust the file share behavior by commenting out configurations and appending global overrides:
 
-[printers]
-[print$]
+* Comment out the blocks starting with `[printers]` and `[print$]` by adding a `#` character to the front of those lines.
+* In the `[global]` block, immediately underneath the line `usershare allow guests = yes`, add:
+  ```text
+  follow symlinks = yes
+  wide links = yes
+  unix extensions = no
+  ```
 
+Append your network drive definition to the bottom of the config:
 
-add in block 
-
-[global]
-
-after
-
-usershare allow guests = yes
-
-content
-
-follow symlinks = yes
-wide links = yes
-unix extensions = no
-
-
-
-add to the end
-
+```text
 [share]
-
 path = /srv/share
 guest ok = yes
 writeable = yes
 force user = samba
+```
 
-13. Restart samba
+Apply modifications and build the music folders:
 
+```bash
 systemctl reload smb
-
-14. Create folders for mpd
-
-mkdir /srv/share/mpd
-mkdir /srv/share/mpd/music
-mkdir /srv/share/mpd/playlists
-
+mkdir -p /srv/share/mpd/music /srv/share/mpd/playlists
 chmod -R 777 /srv/share/mpd
-
-15. Update mpd database
-    
 mpc update
+```
 
-16. Install PM2
+---
 
-apt install nodejs npm
+## 5. Web UI Deployment (CYP)
+
+Install the Node.js framework and global Process Manager (PM2):
+
+```bash
+apt install nodejs npm -y
 npm i -g pm2
+```
 
-pm2 -v
-5.4.3
+Clone the [[[Ondras CYP Frontend Repository](https://github.com)](https://github.com/makserge/cyp)](https://github.com/makserge/cyp) and compile the application bindings:
 
-17. Install MPD web UI
-    
-git clone https://github.com/ondras/cyp.git && cd cyp
+```bash
+git clone https://github.com/makserge/cyp && cd cyp
 npm i
-
 nano index.js
+```
 
-replace
+Change the network binding inside `index.js` to allow external devices to open the dashboard web page:
 
-let httpServer = require("http").createServer(onRequest).listen(port);
+* Find and change `let httpServer = require("http").createServer(onRequest).listen(port);` to:
+  ```javascript
+  let httpServer = require("http").createServer(onRequest).listen(port, '0.0.0.0');
+  ```
 
-to
+Launch the daemon and bind the instance to system startup hooks:
 
-let httpServer = require("http").createServer(onRequest).listen(port, '0.0.0.0');
-
+```bash
 pm2 start index.js
-
-[PM2] Starting /home/debian/cyp/index.js in fork_mode (1 instance)
-[PM2] Done.
-┌────┬──────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
-│ id │ name     │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
-├────┼──────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
-│ 0  │ index    │ default     │ 1.0.0   │ fork    │ 3097     │ 1s     │ 0    │ online    │ 0%       │ 38.8mb   │ debian   │ disabled │
-└────┴──────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
-
 pm2 save
-
-[PM2] Saving current process list...
-[PM2] Successfully saved in /home/debian/.pm2/dump.pm2
-
 pm2 startup
-[PM2] Init System found: systemd
-[PM2] To setup the Startup Script, copy/paste the following command:
-sudo env PATH=$PATH:/usr/bin /usr/local/lib/node_modules/pm2/bin/pm2 startup systemd -u debian --hp /home/debian
+```
 
+*Note: Copy and execute the exact environment execution string provided by the `pm2 startup` terminal printout to establish systemd persistence.*
 
-sudo env PATH=$PATH:/usr/bin /usr/local/lib/node_modules/pm2/bin/pm2 startup systemd -u debian --hp /home/debian
+---
 
-pm2 list
+## 6. Storage Expansion & Equalizer Control
 
-┌────┬──────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
-│ id │ name     │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
-├────┼──────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
-│ 0  │ index    │ default     │ 1.0.0   │ fork    │ 3097     │ 3m     │ 0    │ online    │ 0%       │ 45.1mb   │ debian   │ disabled │
-└────┴──────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+Create a mounting point to connect your external storage device:
 
-18. USB automount TF card
-
+```bash
 mkdir /media/usb
+nano /etc/fstab
+```
 
-sudo nano /etc/fstab
+Append the auto-mount entry at the bottom of the table layout to link your card automatically:
 
-add
-
+```text
 /dev/sda1       /media/usb      auto    nosuid,nodev,nofail       0       0
+```
 
-19. Add symlink to TF card to Samba share
-   
+Link your external physical drive directory into the target MPD multimedia repository:
+
+```bash
 ln -s /media/usb /srv/share/mpd/music
+```
 
-20. Equaliser
+Install the ALSA processing plugins and set up a system-wide software equalizer plugin layer:
 
-sudo apt install libasound2-plugin-equal caps
-sudo nano /etc/asound.conf
+```bash
+apt install libasound2-plugin-equal caps -y
+nano /etc/asound.conf
+```
+
+Add your operational audio mixing routing configurations:
+
+```text
 pcm.my_equalizer {
     type equal
     slave.pcm "plughw:2,0" 
@@ -233,24 +220,37 @@ pcm.!default {
     type plug
     slave.pcm "equalplug"
 }
+```
 
-sudo nano /etc/mpd.conf
+Open up your audio service setup to route output through your virtual channel:
 
-update 
+```bash
+nano /etc/mpd.conf
+```
 
+Modify the pre-existing `audio_output` configuration properties:
+
+```text
 audio_output {
     type            "alsa"
     name            "PCM2704 USB Equalizer"
-    device          "equalplug"     # Target the converter plug wrapper
+    device          "equalplug"
     mixer_type      "software"
 }
+```
 
+Expose the configuration file binary path permissions directly to the running audio daemon instance:
+
+```bash
 rm -f ~/.alsaequal.bin
-sudo touch /var/lib/mpd/.alsaequal.bin
-sudo chown mpd:audio /var/lib/mpd/.alsaequal.bin
-sudo chmod 664 /var/lib/mpd/.alsaequal.bin
+touch /var/lib/mpd/.alsaequal.bin
+chown mpd:audio /var/lib/mpd/.alsaequal.bin
+chmod 664 /var/lib/mpd/.alsaequal.bin
+systemctl restart mpd
+```
 
-sudo systemctl restart mpd
+You can now adjust your frequency bands live on your terminal at any time:
 
+```bash
 alsamixer -D equal
-
+```
