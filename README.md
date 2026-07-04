@@ -173,26 +173,41 @@ pm2 startup
 
 ## 6. Storage Expansion & Equalizer Control
 
-Create a mounting point to connect your external storage device:
+Create mounting points to connect your external USB storage device and your
+second SD card:
 
 ```bash
-mkdir /media/usb
+mkdir -p /media/usb /media/sdcard
 nano /etc/fstab
 ```
 
-Append the auto-mount entry at the bottom of the table layout to link your card automatically:
+Append the auto-mount entries at the bottom of the table layout to link your
+cards automatically with explicit write permissions for the Samba user:
 
 ```text
-/dev/sda1       /media/usb      auto    nosuid,nodev,nofail       0       0
+/dev/sda1       /media/usb      auto    nosuid,nodev,nofail,uid=1001,gid=1001,umask=000  0  0
+/dev/mmcblk1p1  /media/sdcard   auto    nosuid,nodev,nofail,uid=1001,gid=1001,umask=000  0  0
 ```
 
-Link your external physical drive directory into the target MPD multimedia repository:
+Apply the new mount settings immediately and adjust the native directory paths
+to allow full read, write, and execute permissions:
 
 ```bash
-ln -s /media/usb /srv/share/mpd/music
+mount -a
+chown -R samba:samba /media/usb /media/sdcard
+chmod -R 777 /media/usb /media/sdcard
 ```
 
-Install the ALSA processing plugins and set up a system-wide software equalizer plugin layer:
+Link your external physical drive and secondary card directories directly into
+the target MPD multimedia repository:
+
+```bash
+ln -s /media/usb /srv/share/mpd/music/usb
+ln -s /media/sdcard /srv/share/mpd/music/sdcard
+```
+
+Install the ALSA processing plugins and set up a system-wide software
+equalizer plugin layer:
 
 ```bash
 apt install libasound2-plugin-equal caps -y
@@ -239,7 +254,8 @@ audio_output {
 }
 ```
 
-Expose the configuration file binary path permissions directly to the running audio daemon instance:
+Expose the configuration file binary path permissions directly to the running
+audio daemon instance:
 
 ```bash
 rm -f ~/.alsaequal.bin
@@ -247,6 +263,7 @@ touch /var/lib/mpd/.alsaequal.bin
 chown mpd:audio /var/lib/mpd/.alsaequal.bin
 chmod 664 /var/lib/mpd/.alsaequal.bin
 systemctl restart mpd
+mpc update
 ```
 
 You can now adjust your frequency bands live on your terminal at any time:
@@ -254,3 +271,4 @@ You can now adjust your frequency bands live on your terminal at any time:
 ```bash
 alsamixer -D equal
 ```
+
