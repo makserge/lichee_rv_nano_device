@@ -165,6 +165,9 @@ Launch the daemon and bind the instance to system startup hooks:
 pm2 start index.js
 pm2 save
 pm2 startup
+
+sudo visudo -f /etc/sudoers.d/cyp
+debian ALL=(ALL) NOPASSWD: /usr/sbin/shutdown, /usr/bin/mount
 ```
 
 *Note: Copy and execute the exact environment execution string provided by the `pm2 startup` terminal printout to establish systemd persistence.*
